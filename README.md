@@ -11,6 +11,6 @@ Simply download the executable file Paint.exe
 <li>Draw a Semi-Circle</li>
 <li>Draw a Line</li>
 <li>Fill an Object</li>
-<li>Select a color</li>
+<li>Select a color for drawing and filling</li>
 <li>Undo an action (use the U-key)</li>
 </ol>
