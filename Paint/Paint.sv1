@@ -1,0 +1,550 @@
+%Author: Edward Vaisman
+%File Name: Paint.t
+%Project Name: Games
+%Creation Date: March 1, 2013
+%Modified Date: March 1, 2013
+%Description: The purpose of this program is to demonstrate what i have learned
+%from Turing by creating a simple version of microsoft paint
+
+View.Set ("graphics:max;max")
+%Needed to remove flickering when redrawing the screen
+View.Set ("offscreenonly")
+%isGameDone remains false for the entire life of the program until the user is ready to quit
+var isGameDone : boolean := false
+
+%%this will track the users X,Y mouse position
+var mouseX : int
+var mouseY : int
+var lastMouseX : int
+var lastMouseY : int
+var numBoxs : int := 1
+var numCircles : int := 1
+var numSemiCircles : int := 1
+%%user input
+var key : string (1)
+
+%%this will determine weither or not to draw a box
+var isBoxBeingDrawn : boolean := false
+var isCircleBeingDrawn : boolean := false
+var isSemiCircleBeingDrawn : boolean := false
+var isStarBeingDrawn : boolean := false
+var isLineBeingDrawn : boolean := false
+var isTextBoxBeingDrawn : boolean := false
+var isDrawing : boolean := false
+var actionChoice : int := 0
+%% users color choice
+var colorChoice : int := 1
+
+%%this will determine which button is pressed
+var mouseMode : int := 0
+var lastMouseMode : int := 0
+var mouseUpDown : int
+var lastMouseUpDown : int
+
+%%this will be the records that hold the values stored in a rectangle
+type Rectangle :
+    record
+	x1 : int
+	y1 : int
+	x2 : int
+	y2 : int
+	colorNum : int
+    end record
+
+
+%%this will be the records that hold the values stored in a circle
+type Circle :
+    record
+	x1 : int
+	y1 : int
+	x2 : int
+	y2 : int
+	colorNum : int
+    end record
+
+
+%%this will be the records that hold the values stored in a line
+type Line :
+    record
+	x1 : int
+	y1 : int
+	x2 : int
+	y2 : int
+	colorNum : int
+    end record
+
+
+%%this will be the records that hold the values stored in a semiCircle
+type semiCircle :
+    record
+	x1 : int
+	y1 : int
+	x2 : int
+	y2 : int
+	colorNum : int
+    end record
+
+%%this will be the records that hold the values stored in a star
+type Star :
+    record
+	x1 : int
+	y1 : int
+	x2 : int
+	y2 : int
+	colorNum : int
+    end record
+
+
+type Shape :
+    record
+	%if its value is 0 = rectangle, 1 = circle, 2 = semiCircle, 3 = star, 4 = lines
+	shapeNum : int
+	rectangle : Rectangle
+	circle : Circle
+	semiCircle : semiCircle
+	star : Star
+	line : Line
+	fillNum : int
+    end record
+
+%this will hold all the shapes that the user has drawn. this is so we can draw the shapes in the correct order
+var userShapes : flexible array 1 .. 0 of Shape
+
+%Pre: none
+%Post: will check if the user has clicked the mouse inside any of the boxs
+%Description: will check if the user has clicked a box or not
+procedure CheckMouseCollisions ()
+    Mouse.Where (mouseX, mouseY, mouseMode)
+    if (mouseMode = 1) then
+	if (mouseX > 5 & mouseX < 70) then
+	    if (mouseY > maxy - 75 & mouseY < maxy - 25) then
+		actionChoice := 0
+	    elsif (mouseY > maxy - 150 & mouseY < maxy - 100) then
+		actionChoice := 1
+	    elsif (mouseY > maxy - 225 & mouseY < maxy - 175) then
+		actionChoice := 2
+	    elsif (mouseY > maxy - 300 & mouseY < maxy - 250) then
+		actionChoice := 3
+	    elsif (mouseY > maxy - 375 & mouseY < maxy - 325) then
+		actionChoice := 4
+	    end if
+	elsif (mouseY > maxy - 450 & mouseY < maxy - 400) then
+	    actionChoice := 5
+	end if
+    end if
+end CheckMouseCollisions
+%Pre: none
+%Post: will check if the user has clicked the mouse anywhere and if the user has it will draw a box that will 'drag' the box
+%Description: will check if the user has clicked or not and if it has it will start drawing a box
+procedure DrawBox ()
+    %checks if the box has began drawing
+    if (isBoxBeingDrawn = true) then
+	%checks if the mouse is clicked and will draw a box folowing the initial click and the current mouse
+	if (mouseMode = 1) then
+	    Draw.Box (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+	    %once the mouse click is realeasedwill then finish drawing the last position and stop finding the second x,y fot the box
+	else
+	    if (mouseX not= lastMouseX| mouseY not= lastMouseY) then
+		Draw.Box (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+		isBoxBeingDrawn := false
+		isDrawing := false
+		%stores it into the dynamic array
+		var newRectangle : Rectangle
+		%new userRectangles, upper (userRectangles) + 1
+		var newShape : Shape
+		new userShapes, upper (userShapes) + 1
+		newRectangle.x1 := lastMouseX
+		newRectangle.x2 := mouseX
+		newRectangle.y1 := lastMouseY
+		newRectangle.y2 := mouseY
+		newRectangle.colorNum := colorChoice
+		%userRectangles (upper (userRectangles)) := newRectangle
+		userShapes (upper (userShapes)).shapeNum := 0
+		userShapes (upper (userShapes)).rectangle := newRectangle
+		userShapes(upper(userShapes)).fillNum := 1
+	    end if
+	end if
+    else
+	%checks if the mouse has been clicked and then sets the values to prepare for the drawing of the box
+	if (mouseMode = 1) then
+	    lastMouseX := mouseX
+	    lastMouseY := mouseY
+	    lastMouseMode := mouseMode
+	    isBoxBeingDrawn := true
+	    isDrawing := true
+	end if
+    end if
+end DrawBox
+%Pre: gets the possition of the mouse and the color chosen
+%Post: Gets the initial click from the user starting at the center and gets the end of it
+%Description: Will create a circle starting at the midpoint and expanding based on the radius given
+procedure DrawCircle ()
+    %checks if a circle has began drawing
+    if (isCircleBeingDrawn = true) then
+	%checks to see if the mouse is clicked and will draw a circle at the centre
+	if (mouseMode = 1) then
+	    Draw.Oval (lastMouseX, lastMouseY, mouseX - lastMouseX, mouseY - lastMouseY, colorChoice)
+	else
+	    if (mouseX not= lastMouseX| mouseY not= lastMouseY) then
+		Draw.Oval (lastMouseX, lastMouseY, mouseX - lastMouseX, mouseY - lastMouseY, colorChoice)
+		isCircleBeingDrawn := false
+		isDrawing := false
+		%stores it into the dynamic array
+		var newCircle : Circle
+		%new userCircles, upper (userCircles) + 1
+		var newShape : Shape
+		new userShapes, upper (userShapes) + 1
+		newCircle.x1 := lastMouseX
+		newCircle.x2 := mouseX
+		newCircle.y1 := lastMouseY
+		newCircle.y2 := mouseY
+		newCircle.colorNum := colorChoice
+		%userCircles (upper (userCircles)) := newCircle
+		userShapes (upper (userShapes)).shapeNum := 1
+		userShapes (upper (userShapes)).circle := newCircle
+	    end if
+	end if
+    else
+	%checks to see if the mouse has been clicked and then sets the values to prepare for the drawing of the circle
+	if (mouseMode = 1) then
+	    lastMouseX := mouseX
+	    lastMouseY := mouseY
+	    lastMouseMode := mouseMode
+	    isCircleBeingDrawn := true
+	    isDrawing := true
+	end if
+    end if
+end DrawCircle
+%Pre: none
+%Post: Gets the initial click from the user starting at the center and gets the end of it but only draws half of the circle
+%Description: Behaves much like a circle except on draws half of the circle
+procedure DrawSemiCircle ()
+    if (isSemiCircleBeingDrawn = true) then
+	%checks to see if the mouse is clicked and will draw a semi circle starting at the centre
+	if (mouseMode = 1) then
+	    Draw.Arc (lastMouseX, lastMouseY, mouseX - lastMouseX, mouseY - lastMouseY, 0, 180, colorChoice)
+	else
+	    if (mouseX not= lastMouseX| mouseY not= lastMouseY) then
+		Draw.Arc (lastMouseX, lastMouseY, mouseX - lastMouseX, mouseY - lastMouseY, 0, 180, colorChoice)
+		isSemiCircleBeingDrawn := false
+		isDrawing := false
+		%stores it into the dynamic array
+		var newSemiCircle : semiCircle
+		%new userSemiCircles, upper (userSemiCircles) + 1
+		var newShape : Shape
+		new userShapes, upper (userShapes) + 1
+		newSemiCircle.x1 := lastMouseX
+		newSemiCircle.x2 := mouseX
+		newSemiCircle.y1 := lastMouseY
+		newSemiCircle.y2 := mouseY
+		newSemiCircle.colorNum := colorChoice
+		%userSemiCircles (upper (userSemiCircles)) := newSemiCircle
+		userShapes (upper (userShapes)).shapeNum := 2
+		userShapes (upper (userShapes)).semiCircle := newSemiCircle
+	    end if
+	end if
+    else
+	%checks to see if the mouse has been clicked and then sets the values to prepare for the drawing of the circle
+	if (mouseMode = 1) then
+	    lastMouseX := mouseX
+	    lastMouseY := mouseY
+	    lastMouseMode := mouseMode
+	    isSemiCircleBeingDrawn := true
+	    isDrawing := true
+	end if
+    end if
+end DrawSemiCircle
+
+procedure DrawStar ()
+    %checks if the box has began drawing
+    if (isStarBeingDrawn = true) then
+	%checks if the mouse is clicked and will draw a box folowing the initial click and the current mouse
+	if (mouseMode = 1) then
+	    Draw.Star (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+	    %once the mouse click is realeased will then finish drawing the last position and stop finding the second x,y for the Star
+	else
+	    if (mouseX not= lastMouseX| mouseY not= lastMouseY) then
+		Draw.Star (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+		isStarBeingDrawn := false
+		isDrawing := false
+		%stores it into the dynamic array
+		var newStar : Star
+		%new userStars, upper (userStars) + 1
+		var newShape : Shape
+		new userShapes, upper (userShapes) + 1
+		newStar.x1 := lastMouseX
+		newStar.x2 := mouseX
+		newStar.y1 := lastMouseY
+		newStar.y2 := mouseY
+		newStar.colorNum := colorChoice
+		%userStars (upper (userStars)) := newStar
+		userShapes (upper (userShapes)).shapeNum := 3
+		userShapes (upper (userShapes)).star := newStar
+	    end if
+
+	end if
+    else
+	%checks if the mouse has been clicked and then sets the values to prepare for the drawing of the Star
+	if (mouseMode = 1) then
+	    lastMouseX := mouseX
+	    lastMouseY := mouseY
+	    lastMouseMode := mouseMode
+	    isStarBeingDrawn := true
+	    isDrawing := true
+	end if
+    end if
+end DrawStar
+
+procedure DrawLine ()
+    %checks if the box has began drawing
+    if (isLineBeingDrawn = true) then
+	%checks if the mouse is clicked and will draw a box folowing the initial click and the current mouse
+	if (mouseMode = 1) then
+	    Draw.Line (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+	    %once the mouse click is realeasedwill then finish drawing the last position and stop finding the second x,y fot the box
+	else
+	    Draw.Line (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+	    isLineBeingDrawn := false
+	    isDrawing := false
+
+	    % this is a temporary variable that will be used to store in the array of shapes later
+	    var newLine : Line
+
+	    var newShape : Shape
+	    new userShapes, upper (userShapes) + 1
+
+	    % properties of a line
+	    newLine.x1 := lastMouseX
+	    newLine.x2 := mouseX
+	    newLine.y1 := lastMouseY
+	    newLine.y2 := mouseY
+	    newLine.colorNum := colorChoice
+
+	    %stores it into the shapes array and sets the number to 4 to indicate that its a line
+	    userShapes (upper (userShapes)).shapeNum := 4
+	    userShapes (upper (userShapes)).line := newLine
+
+	end if
+    else
+	%checks if the mouse has been clicked and then sets the values to prepare for the drawing of the box
+	if (mouseMode = 1) then
+	    lastMouseX := mouseX
+	    lastMouseY := mouseY
+	    lastMouseMode := mouseMode
+	    isLineBeingDrawn := true
+	    isDrawing := true
+	end if
+    end if
+end DrawLine
+
+
+%Pre: none
+%Post: All images, objects and stats will be updated
+%Description: Update the locations, frames for all images as well as any stats
+procedure Update ()
+    if (isDrawing = false) then
+	CheckMouseCollisions ()
+    else
+	Mouse.Where (mouseX, mouseY, mouseMode)
+    end if
+end Update
+
+%Pre: none
+%Post: Will draw the options the user can have
+%Description: Draws the user interface
+procedure SetupHud ()
+
+    %%creates the "top-bottom" hud
+    Draw.Box (0, 0, 75, maxy, 255)
+
+    %%creates the "left-right" hud
+    Draw.Box (0, 0, maxx, 75, 255)
+
+    %%fills in the colour of the hud created above
+    Draw.Fill (1, 1, 16, 255)
+    Draw.Fill (1, 76, 138, 255)
+    Draw.Fill (76, 1, 138, 255)
+
+
+    %%Draws a box that has the first option which is Draw Box.
+    Draw.Box (5, maxy - 75, 70, maxy - 25, 255)
+    %%Draws text on a box
+    Font.Draw ("Draw Box", 5, maxy - 50, Font.New ("serif:12"), 16)
+
+    %%Draws a box right under draw box that says Draw Circle
+    Draw.Box (5, maxy - 150, 70, maxy - 100, 255)
+    %%Draws text on a box
+    Font.Draw ("Draw Circle", 7, maxy - 130, Font.New ("serif:10"), 14)
+
+    %%Draws a box right under draw circle that says Draw Star
+    Draw.Box (5, maxy - 225, 70, maxy - 175, 255)
+    %%Draws text on a box
+    Font.Draw ("Draw Star", 7, maxy - 210, Font.New ("serif:12"), 16)
+
+    %%Draws a box right under draw circle that says Draw Semi-Circle
+    Draw.Box (5, maxy - 300, 70, maxy - 250, 255)
+    %%Draws text on a box
+    Font.Draw ("Draw Semi", 7, maxy - 275, Font.New ("serif:10"), 16)
+    %%Draws text on a box
+    Font.Draw ("Circle", 7, maxy - 290, Font.New ("serif:10"), 16)
+
+    %%Draws a box right under draw semi Circle that says Draw Lnie
+    Draw.Box (5, maxy - 375, 70, maxy - 325, 255)
+    %%Draws text on a box
+    Font.Draw ("Draw Line", 7, maxy - 360, Font.New ("serif:12"), 16)
+
+    %%These are small boxs that the user may click so to choose ethier fill mode or border mode
+    Draw.Box (5, 25, 30, 50, 0)
+    Draw.FillBox (6, 26, 29, 49, 29)
+    Draw.Box (35, 25, 60, 50, 0)
+    Draw.FillBox (36, 26, 59, 49, 0)
+    %%These are very small boxs that will represent the colors the user may use
+
+
+end SetupHud
+
+%pre: none
+%post : takes information from an array and decides what shape needs to be drawn
+%description : draws all the shapes that the user has entered
+procedure DrawAllUserShapes ()
+    for i : 1 .. upper (userShapes)
+	if (userShapes (i).shapeNum = 0) then
+	    Draw.Box (userShapes (i).rectangle.x1, userShapes (i).rectangle.y1, userShapes (i).rectangle.x2, userShapes (i).rectangle.y2, userShapes (i).rectangle.colorNum)
+
+	    var x : int
+	    var y : int
+
+	    x := (userShapes (i).rectangle.x1 + (serShapes (i).rectangle.x2/2)
+	    y := (userShapes (i).rectangle.y1 + userShapes (i).rectangle.y2/2)
+	    Draw.Fill (x, y, userShapes(i).fillNum, userShapes (i).rectangle.colorNum)
+
+	elsif (userShapes (i).shapeNum = 1) then
+	    Draw.Oval (userShapes (i).circle.x1, userShapes (i).circle.y1, userShapes (i).circle.x2 - userShapes (i).circle.x1, userShapes (i).circle.y2 - userShapes (i).circle.y1,
+		userShapes (i).circle.colorNum)
+
+	    var x : int
+	    var y : int
+
+	    x := (userShapes (i).circle.x1 + userShapes (i).circle.x2-1)
+	    y := (userShapes (i).circle.y1 + userShapes (i).circle.y2-1)
+	    Draw.Fill (x, y, userShapes(i).fillNum, userShapes (i).circle.colorNum)
+
+	elsif (userShapes (i).shapeNum = 2) then
+	    Draw.Arc (userShapes (i).semiCircle.x1, userShapes (i).semiCircle.y1, userShapes (i).semiCircle.x2 - userShapes (i).semiCircle.x1, userShapes (i).semiCircle.y2 -
+		userShapes (i).semiCircle.y1, 0, 180, userShapes (i).semiCircle.colorNum)
+
+	    var x : int
+	    var y : int
+
+	    x := (userShapes (i).semiCircle.x1 + userShapes (i).semiCircle.x2-1)
+	    y := (userShapes (i).semiCircle.y1 + userShapes (i).semiCircle.y2-1)
+	    Draw.Fill (x, y, userShapes(i).fillNum, userShapes (i).semiCircle.colorNum)
+
+	elsif (userShapes (i).shapeNum = 3) then
+	    Draw.Star (userShapes (i).star.x1, userShapes (i).star.y1, userShapes (i).star.x2, userShapes (i).star.y2, userShapes (i).star.colorNum)
+
+	    var x : int
+	    var y : int
+
+	    x := (userShapes (i).star.x1 + userShapes (i).star.x2-1)
+	    y := (userShapes (i).star.y1 + userShapes (i).star.y2-1)
+	    Draw.Fill (x, y, userShapes(i).fillNum, userShapes (i).star.colorNum)
+
+	elsif (userShapes (i).shapeNum = 4) then
+	    Draw.Line (userShapes (i).line.x1, userShapes (i).line.y1, userShapes (i).line.x2, userShapes (i).line.y2, userShapes (i).line.colorNum)
+	    var x : int
+	    var y : int
+
+	    x := (userShapes (i).line.x1 + userShapes (i).line.x2-1)
+	    y := (userShapes (i).line.y1 + userShapes (i).line.y2-1)
+	    Draw.Fill (x, y, userShapes(i).fillNum, userShapes (i).line.colorNum)
+
+	end if
+
+    end for
+end DrawAllUserShapes
+
+%Pre: none
+%Post: Draw all needed visible items on the screen
+%Description: Using specific subprograms draw all needed items
+procedure DrawProgram ()
+    cls
+    SetupHud ()
+
+    DrawAllUserShapes ()
+    %Draw Middleground (Characters, environment objects, etc.)
+    if (mouseX > 75 & mouseX < maxx) then
+	if (mouseY > 75 & mouseY < maxy) then
+	    if (actionChoice = 0) then
+		DrawBox ()
+	    elsif (actionChoice = 1) then
+		DrawCircle ()
+	    elsif (actionChoice = 2) then
+		DrawStar ()
+	    elsif (actionChoice = 3) then
+		DrawSemiCircle ()
+	    elsif (actionChoice = 4) then
+		DrawLine ()
+	    elsif (actionChoice = 5) then
+		%FillBox
+	    end if
+	end if
+    end if
+    %Draw Foreground (Anything that should be drawn on top of the Middleground
+
+    %Everything has been drawn, Update the screen (which will actually put everything on the screen)
+    View.Update ()
+end DrawProgram
+
+%Main Game Loop:
+% 1. Clear the screen
+% 2. Get user input
+% 3. Update all items in the game
+%   -Move items
+%   -update stats like scores, etc.
+%   -etc.
+% 4. Check for collisions
+% 5. Redraw the screen
+% 6. Play any sounds that need to be played
+% 7. Delay the loop enough time to result in an fps of 30
+loop
+    %1. Clear the screen
+
+
+    %2. Get User Input and handle it (This is where you check for control)
+    % hasch is a special command that check to see if the user has typed a letter
+    % if they have then we will "getch" the letter and check to see what it is
+    % and handle it appropriately
+    if (hasch) then
+	%read in the character the user typed and clear out any extra keys because of a held in key
+	getch (key)
+	Input.Flush
+	%check to see what letter it is and handle it appropriately
+	case key of
+		%if the user entered "x" they want to exit
+	    label "x" :
+		isGameDone := true
+	    label "a" :
+		put "a"
+	    label "c" :
+		Draw.Cls
+	end case
+    end if
+
+
+    %Update all items and necessary inforamation of the program
+    Update ()
+
+    %ReDraw ALL items that need to be drawn on the screen
+    DrawProgram ()
+
+
+    %Delay enough time to force 30 fps, in Turing time is measured in milliseconds
+    %There are 1000 milliseconds in 1 second, 1000/30 =  33 milliseconds
+    %if you want to change your framerate just recalculate the math and change the delay
+    delay (33)
+
+    exit when isGameDone = true
+end loop
+
+quit

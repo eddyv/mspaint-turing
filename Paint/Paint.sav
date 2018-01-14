@@ -1,0 +1,212 @@
+%Author: Edward Vaisman
+%File Name: Paint.t
+%Project Name: Games
+%Creation Date: March 1, 2013
+%Modified Date: March 1, 2013
+%Description: The purpose of this program is to demonstrate what i have learned
+%from Turing by creating a simple version of microsoft paint
+
+View.Set ("graphics:max;max")
+%Needed to remove flickering when redrawing the screen
+View.Set ("offscreenonly")
+%isGameDone remains false for the entire life of the program until the user is ready to quit
+var isGameDone : boolean := false
+
+%%this will track the users X,Y mouse position
+var mouseX : int
+var mouseY : int
+var lastMouseX : int
+var lastMouseY : int
+var numBoxs : int := 0
+%%user input
+var key : string (1)
+
+%%this will determine weither or not to draw a box
+var isBoxBeingDrawn : boolean := false
+var isDrawDone : boolean := true
+var isPaintLoaded : boolean := false
+%% users color choice
+var colorChoice : int := 1
+
+%%this will determine which button is pressed
+var mouseMode : int := 0
+var lastMouseMode : int := 0
+var mouseUpDown : int
+var lastMouseUpDown : int
+
+%Pre: none
+%Post: All images, objects and stats will be updated
+%Description: Update the locations, frames for all images as well as any stats
+procedure CheckMouseCollisions ()
+
+end CheckMouseCollisions
+
+procedure DrawBox (var x1 : int, var y1 : int, var x2 : int, var y2 : int, var colorNum : int)
+    Draw.Box (x1, y1, x2, y2, colorNum)
+end DrawBox
+
+
+%Pre: none
+%Post: All images, objects and stats will be updated
+%Description: Update the locations, frames for all images as well as any stats
+procedure Update ()
+   
+    if(isPaintLoaded = false) then
+    isPaintLoaded := true
+    else
+    if(isBoxBeingDrawn = true) then
+    Mouse.ButtonWait("up",mouseX,mouseY,mouseMode,lastMouseMode)
+    Mouse.Where(mouseX,mouseY,mouseMode)
+    Draw.Box (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+    end if
+    %waits for a mouse click and then sets the "starting points" of the box
+    Mouse.ButtonWait ("down", lastMouseX, lastMouseY, lastMouseMode, mouseMode)
+    %then sets this boolean to true that will draw the box while the button isnt down
+    if (isBoxBeingDrawn not= not isBoxBeingDrawn) then
+	isBoxBeingDrawn := not isBoxBeingDrawn
+    end if
+    loop
+	%gets position of the mouse
+	Mouse.Where (mouseX, mouseY, mouseMode)
+	exit when mouseMode = 0
+	Draw.Box (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+    end loop
+    end if
+       
+     %Put update code in here
+	/*if (Mouse.ButtonMoved ("down")) then
+	    if (isBoxBeingDrawn = false) then
+		Mouse.Where (lastMouseX, lastMouseY, lastMouseMode)
+		isBoxBeingDrawn := true
+	    else
+		Mouse.Where (mouseX, mouseY, mouseMode)
+		Draw.Box (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+		isBoxBeingDrawn := false
+		numBoxs := numBoxs + 1
+	    end if
+	else
+	    if (isBoxBeingDrawn = true) then
+		Mouse.Where (mouseX, mouseY, mouseMode)
+		Draw.Box (lastMouseX, lastMouseY, mouseX, mouseY, colorChoice)
+	    end if
+	end if
+	if (numBoxs > 0) then
+
+	end if
+	*/
+	/*loop
+	 Mouse.ButtonWait("down",lastMouseX,lastMouseY,lastMouseMode,lastMouseUpDown)
+	 loop
+	 exit when Mouse.ButtonMoved("up")
+	 Mouse.Where(mouseX,mouseY,mouseMode)
+	 Draw.Box(lastMouseX,lastMouseY,mouseX,mouseY,colorChoice)
+	 end loop
+	 Mouse.ButtonWait("up",mouseX,mouseY,mouseMode,mouseUpDown)
+	 Draw.Box(lastMouseX,lastMouseY,mouseX,mouseY,colorChoice)
+	 end loop
+	 */
+    end Update
+
+    %Pre: none
+    %Post: Will draw the options the user can have
+    %Description: Draws the user interface
+    procedure SetupHud ()
+
+	%%creates the "top-bottom" hud
+	Draw.Box (0, 0, 75, maxy, 255)
+
+	%%creates the "left-right" hud
+	Draw.Box (0, 0, maxx, 75, 255)
+
+	%%fills in the colour of the hud created above
+	Draw.Fill (1, 1, 16, 255)
+	Draw.Fill (1, 76, 138, 255)
+	Draw.Fill (76, 1, 138, 255)
+
+
+	%%Draws a box that has the first option which is Draw Box.
+	Draw.Box (5, maxy - 75, 70, maxy - 25, 255)
+
+	%%Draws text on a box
+	Font.Draw ("Draw Box", 5, maxy - 50, Font.New ("serif:12"), 16)
+
+	%%Draws a box right under draw box that says Draw Circle
+	Draw.Box (5, maxy - 150, 70, maxy - 100, 255)
+
+	%%Draws text on a box
+	Font.Draw ("Draw Circle", 7, maxy - 130, Font.New ("serif:10"), 14)
+
+	%%Draws a box right under draw box that says Draw Star
+	Draw.Box (5, maxy - 225, 70, maxy - 175, 255)
+
+	%%Draws text on a box
+	Font.Draw ("Draw Star", 7, maxy - 210, Font.New ("serif:12"), 16)
+
+
+    end SetupHud
+
+    %Pre: none
+    %Post: Draw all needed visible items on the screen
+    %Description: Using specific subprograms draw all needed items
+    procedure DrawProgram ()
+	SetupHud ()
+
+	%Draw Middleground (Characters, environment objects, etc.)
+
+	%Draw Foreground (Anything that should be drawn on top of the Middleground
+
+	%Everything has been drawn, Update the screen (which will actually put everything on the screen)
+	View.Update ()
+    end DrawProgram
+
+    %Main Game Loop:
+    % 1. Clear the screen
+    % 2. Get user input
+    % 3. Update all items in the game
+    %   -Move items
+    %   -update stats like scores, etc.
+    %   -etc.
+    % 4. Check for collisions
+    % 5. Redraw the screen
+    % 6. Play any sounds that need to be played
+    % 7. Delay the loop enough time to result in an fps of 30
+    loop
+	%1. Clear the screen
+
+
+	%2. Get User Input and handle it (This is where you check for control)
+	% hasch is a special command that check to see if the user has typed a letter
+	% if they have then we will "getch" the letter and check to see what it is
+	% and handle it appropriately
+	if (hasch) then
+	    %read in the character the user typed and clear out any extra keys because of a held in key
+	    getch (key)
+	    Input.Flush
+	    %check to see what letter it is and handle it appropriately
+	    case key of
+		    %if the user entered "x" they want to exit
+		label "x" :
+		    isGameDone := true
+		label "a" :
+		    put "a"
+		label "c" :
+		    Draw.Cls
+	    end case
+	end if
+
+	%Update all items and necessary inforamation of the program
+	Update ()
+
+	%ReDraw ALL items that need to be drawn on the screen
+	DrawProgram ()
+
+
+	%Delay enough time to force 30 fps, in Turing time is measured in milliseconds
+	%There are 1000 milliseconds in 1 second, 1000/30 =  33 milliseconds
+	%if you want to change your framerate just recalculate the math and change the delay
+	delay (33)
+
+	exit when isGameDone = true
+    end loop
+
+    quit
