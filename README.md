@@ -1,6 +1,8 @@
 # mspaint-turing
 Back in 2013 near the end of my senior year in high school I had the ambition to duplicate one of the most used applications of all time.
-Microsoft paint. This was accomplished using the programming language called Turing.
+Microsoft paint. This was accomplished using the programming language called Turing.<br>
+<h1>Instructions</h1>
+Simply download the executable file Paint.exe
 <h1>Features</h1>
 <ol>
 <li>Draw a Box</li>
